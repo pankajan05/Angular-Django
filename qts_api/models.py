@@ -1,10 +1,12 @@
 from django.db import models
+import django
+from datetime import date
 from django.core.validators import MaxValueValidator, MinValueValidator
 
 
 class ad_type(models.Model):
-    type_id = models.IntegerField(primary_key=True, validators=[MinValueValidator(1), MaxValueValidator(5)])
-    type_name = models.CharField(max_length=50)
+    type_id = models.AutoField(primary_key=True)
+    type_name = models.CharField(max_length=100)
     Is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -17,8 +19,10 @@ class user(models.Model):
     password = models.CharField(max_length=100)
     first_name = models.CharField(max_length=150)
     last_name = models.CharField(max_length=150)
+    address = models.TextField(default="")
     contact = models.CharField(max_length=20)
-    json_token = models.CharField(max_length=100)
+    user_type = models.CharField(max_length=150,default='new user')
+    json_token = models.CharField(max_length=200)
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -65,11 +69,12 @@ class ad_listing(models.Model):
     ad_name = models.CharField(max_length=150)
     ad_type = models.ForeignKey(ad_type, on_delete=models.CASCADE)
     ad_price = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    ad_status = models.IntegerField()
-    ad_duration = models.IntegerField
+    CHOICES = [('NEW', 'New'), ('UPD', 'updated'), ('OUT', 'outdated'), ('DEL', 'deleted')]
+    ad_status = models.CharField(max_length=3, choices=CHOICES, default=CHOICES[0])
+    ad_duration = models.DurationField()
     is_ad_promoted = models.BooleanField(default=False)
-    promotion_duration = models.IntegerField()
-    ad_posted_date = models.DateField
+    promotion_duration = models.DurationField()
+    ad_posted_date = models.DateField(default=date.today)
     ad_posted_by = models.ForeignKey(user, on_delete=models.CASCADE)
     city = models.ForeignKey(city, on_delete=models.CASCADE)
     ad_category = models.ForeignKey(sub_category, on_delete=models.CASCADE)
@@ -82,7 +87,7 @@ class ad_listing(models.Model):
 class image(models.Model):
     image_id = models.BigAutoField(primary_key=True)
     ad_id = models.ForeignKey(ad_listing, on_delete=models.CASCADE)
-    url = models.TextField()
+    url = models.URLField(default='')
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -91,9 +96,9 @@ class image(models.Model):
 
 class feedback(models.Model):
     feedback_id = models.AutoField(primary_key=True)
-    rating = models.IntegerField(default=1)
-    comments = models.TextField(max_length=250)
-    user_id = models.IntegerField()
+    rating = models.IntegerField(default=0)
+    comments = models.TextField(default="")
+    user_id = models.CharField(max_length=100)
     commented_user = models.ForeignKey(user, on_delete=models.CASCADE)
     is_deleted = models.BooleanField(default=False)
 
@@ -105,7 +110,7 @@ class promotion_package(models.Model):
     promotion_id = models.AutoField(primary_key=True)
     promotion_name = models.CharField(max_length=150)
     promotion_cost = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
-    duration = models.IntegerField
+    duration = models.DurationField()
     is_deleted = models.BooleanField(default=False)
 
     def __str__(self):
@@ -115,8 +120,9 @@ class promotion_package(models.Model):
 class promoted_ad_detail(models.Model):
     pa_ad_id = models.BigAutoField(primary_key=True)
     ad_id = models.ForeignKey(ad_listing, on_delete=models.CASCADE)
-    starting_date = models.DateField
-    status = models.IntegerField
+    starting_date = models.DateField()
+    CHOICES = [('NEW', 'New'), ('UPD', 'updated'), ('OUT', 'outdated'), ('DEL', 'deleted')]
+    status = models.CharField(max_length=3, choices=CHOICES, default='NEW')
     promotion_id = models.ForeignKey(promotion_package, on_delete=models.CASCADE)
     is_deleted = models.BooleanField(primary_key=False)
 
@@ -127,9 +133,9 @@ class promoted_ad_detail(models.Model):
 class payment(models.Model):
     payment_id = models.BigAutoField(primary_key=True)
     promoted_ad_id = models.ForeignKey(promoted_ad_detail, on_delete=models.CASCADE)
-    payment_date = models.DateField
-    payment_time = models.TimeField
-    paid_amount = models.DecimalField
+    payment_date = models.DateField()
+    payment_time = models.TimeField()
+    paid_amount = models.DecimalField(max_digits=12, decimal_places=2, blank=True, null=True)
     payment_status = models.BooleanField(default=True)
 
     def __str__(self):
